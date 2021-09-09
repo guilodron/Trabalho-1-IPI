@@ -52,6 +52,10 @@ def interpolate(original_image):
 def dec_int(original_image):
     reduzida = reduceImage(original_image)
     interpolada = interpolate(reduzida)
+    # Descomentar duas linhas abaixo para visualizar redimensionamento codificado
+    # cv2.imshow('Reduzida', reduzida)
+    # cv2.imshow('Interpolada', interpolada)
+    cv2.waitKey()
     return interpolada
 
 # \brief Aplica um filtro de aguçamento Laplaciano na imagem
@@ -59,10 +63,10 @@ def dec_int(original_image):
 # \param image imagem a ser filtrada
 # \return matriz representando a imagem filtrada
 def edge_improv(image):
-    kernel = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
+    kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
     filtered = cv2.filter2D(image, ddepth=-1, kernel=kernel)
-    improved = cv2.add(image, filtered)
+    improved = cv2.subtract(image, filtered)
     return improved
 
 # \brief Aplica a transformação de potência em uma imagem
@@ -87,6 +91,24 @@ def equalize_hist(image):
     else:
         return cv2.equalizeHist(image)
 
+# \brief Funçao que aplica o filtro Laplaciano de acordo com a opçao passada
+# 
+# \param image Imagem a ser filtrada
+# \param type Tipo do kernel a ser aplicado 0-[+-4] 1-[+-8]
+# \return Matriz com a imagem após a borda ser adicionada 
+def sharpening(image, type):
+    kernel_8 = np.array([[1,1,1], [1, -8, 1], [1, 1, 1]])
+    kernel_4 = np.array([[0,1,0], [1, -4, 1], [0, 1, 0]])
+    if type == 0:
+        laplacian =  cv2.filter2D(image, -1, kernel_4)
+        return cv2.subtract(image, laplacian)
+    elif type == 1:
+        laplacian =  cv2.filter2D(image, -1, kernel_8)
+        return cv2.subtract(image, laplacian)
+    else:
+        print('Tipo laplaciano inválido')
+        return False
+    
 def Prog1():
     # manual resize
     original_image = cv2.imread('images/test80.jpg')
@@ -94,14 +116,15 @@ def Prog1():
     # opencv resize
     compressed = cv2.resize(original_image, (int(original_image.shape[1]/2), int(original_image.shape[0]/2)), interpolation = cv2.INTER_CUBIC)
     interpolated = cv2.resize(compressed, (int(compressed.shape[1]*2), int(compressed.shape[0]*2)), interpolation = cv2.INTER_CUBIC)
-    # cv2.imshow('My resize', my_resized)
-    # cv2.imshow('OpenCV resize', interpolated)
+    # Descomentar duas linhas abaixo para ver o redimensionamento do opencv
+    # cv2.imshow('OpenCV reduce', compressed)
+    # cv2.imshow('OpenCV interpolated', interpolated)
     my_resized_improved = edge_improv(my_resized)
     opencv_resized_improved = edge_improv(interpolated)
     cv2.imshow('My resize improved', my_resized_improved)
     cv2.imshow('OpenCV resize improved', opencv_resized_improved)
 
-def Prog2():
+def Prog2(): 
     # car.png manipulations
     car = cv2.imread('images/car.png')
     cv2.imshow('Car Original', car)
@@ -132,7 +155,7 @@ def Prog2():
 
     # university.png manipulations
     university = cv2.imread('images/university.png')
-    cv2.imshow('Crowd Original', university)
+    cv2.imshow('University Original', university)
     power_law(university, 0.3)
     power_law(university, 0.6)
     power_law(university, 0.9)
@@ -174,12 +197,29 @@ def Prog2():
     ax[1][1].set_title('CDF da imagem equalizada')
     plt.show()
 
-# Prog1()
-# cv2.waitKey()
-# cv2.destroyAllWindows()
+def Prog3():
+    image = cv2.imread('images/Image1.pgm')
+    # 2.1
+    first = sharpening(image, 1)
+    cv2.imshow('Imagem original', image)
+    cv2.imshow('Laplaciano todas as direcoes', first)
+    # 2.2
+    first_gaussian = cv2.GaussianBlur(image, [3,3], 0.5)
+    second = sharpening(first_gaussian, 0)
+    cv2.imshow('Laplaciano com gaussiano 0.5', second)
+    # 2.3
+    second_gaussian = cv2.GaussianBlur(image, [3,3], 1)
+    third = sharpening(second_gaussian, 0)
+    cv2.imshow('Laplaciano com gaussiano 1', third)
+ 
+# Para prosseguir nos itens pedidos no trabalho
+# basta apertar qualquer tecla
+Prog1()
+cv2.waitKey()
+cv2.destroyAllWindows()
 
-# Prog2()
-# cv2.waitKey()
+Prog2()
+cv2.waitKey()
 
-
-print('ok')
+Prog3()
+cv2.waitKey()
